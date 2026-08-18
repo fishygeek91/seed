@@ -8,6 +8,7 @@
 import { useSimStore } from '@/store/useSimStore';
 import { selectView, formatDoubling, formatKg } from '@/components/view';
 import { HudValue } from '@/components/HudValue';
+import { HistoryStrip } from '@/components/HistoryStrip';
 import { ELEMENT_IDS, ELEMENT_LABELS, VITAMIN_IDS, VITAMIN_LABELS, PART_IDS } from '@/sim/ids';
 import { PART_RECIPES } from '@/data/parts';
 
@@ -28,62 +29,6 @@ function Row({ label, value, alarm = false }: { readonly label: string; readonly
       <span className='text-dim'>{label}</span>
       <span className={`tabular-nums ${alarm ? 'text-alarm' : 'text-foreground'}`}>{value}</span>
     </div>
-  );
-}
-
-/**
- * Capacity growth sparkline: log-scale capacity over every recorded sol,
- * with storm sols shaded magenta and doubling moments marked as phosphor ticks.
- * Exponential growth renders as a straight climbing line — takeoff at a glance.
- */
-function CapacitySparkline(): React.ReactElement | null {
-  const history = useSimStore((s) => s.state.history);
-  const doublings = useSimStore((s) => s.state.doublings);
-  const scrubSol = useSimStore((s) => s.scrubSol);
-  if (history.length < 3) {
-    return null;
-  }
-  const w = 296;
-  const h = 56;
-  const firstSol = history[0].sol;
-  const lastSol = history[history.length - 1].sol;
-  const solSpan = Math.max(1, lastSol - firstSol);
-  const logs = history.map((s) => Math.log(Math.max(1, s.capacityKg)));
-  const minLog = Math.min(...logs);
-  const maxLog = Math.max(...logs);
-  const logSpan = Math.max(0.0001, maxLog - minLog);
-  const toX = (sol: number): number => ((sol - firstSol) / solSpan) * w;
-  const toY = (logValue: number): number => h - 4 - ((logValue - minLog) / logSpan) * (h - 8);
-  const points = history.map((s, i) => `${toX(s.sol).toFixed(1)},${toY(logs[i]).toFixed(1)}`).join(' ');
-
-  // Contiguous storm bands (optical depth well above quiet baseline).
-  const bands: { x: number; width: number }[] = [];
-  let bandStart: number | null = null;
-  for (let i = 0; i < history.length; i += 1) {
-    const stormy = history[i].opticalDepth > 2;
-    if (stormy && bandStart === null) {
-      bandStart = history[i].sol;
-    }
-    if ((!stormy || i === history.length - 1) && bandStart !== null) {
-      bands.push({ x: toX(bandStart), width: Math.max(1, toX(history[i].sol) - toX(bandStart)) });
-      bandStart = null;
-    }
-  }
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className='w-full border border-panel-edge bg-black/30' role='img' aria-label='Capacity growth, log scale'>
-      {bands.map((band, i) => (
-        <rect key={`storm-${i}`} x={band.x} y={0} width={band.width} height={h} fill='#ff3d8a' opacity={0.14} />
-      ))}
-      {doublings.map((d) => (
-        <line key={`dbl-${d.multiple}`} x1={toX(d.sol)} y1={0} x2={toX(d.sol)} y2={h} stroke='#2bff9e' strokeWidth={1} opacity={0.8} />
-      ))}
-      {scrubSol !== null ? <line x1={toX(scrubSol)} y1={0} x2={toX(scrubSol)} y2={h} stroke='#3fd2ff' strokeWidth={1} /> : null}
-      <polyline points={points} fill='none' stroke='#b6e9d6' strokeWidth={1.4} />
-      <text x={3} y={10} fontSize={7} fill='#45705f' fontFamily='inherit'>
-        log capacity · storms shaded · ×2 ticks
-      </text>
-    </svg>
   );
 }
 
@@ -175,7 +120,7 @@ export function RightPanel(): React.ReactElement {
   return (
     <aside className='panel-surface flex w-80 shrink-0 flex-col gap-2 border-l border-panel-edge p-3 overflow-y-auto'>
       <DoublingHero />
-      <CapacitySparkline />
+      <HistoryStrip />
       <div className='flex gap-2'>
         <HudValue
           label='Capacity'

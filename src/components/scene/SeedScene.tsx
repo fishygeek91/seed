@@ -27,6 +27,7 @@ import * as THREE from 'three';
 import { useSimStore } from '@/store/useSimStore';
 import { selectView } from '@/components/view';
 import type { SceneView } from '@/components/view';
+import type { ReelBeat } from '@/sim/reel';
 
 /* ------------------------------------------------------------------ */
 /* Shared hologram materials & deterministic noise                     */
@@ -1448,18 +1449,92 @@ function computeAutoShot(view: SceneView, t: number, memory: DirectorMemory): Di
 }
 
 /**
+ * Frame one mission-reel beat. The scrubber has already jumped the scene to
+ * the beat's sol, so the shot only has to point at the right subject: the
+ * pad for the landing, the newest colony seed for a wake, the cargo zone for
+ * a touchdown, wide for storms, high for doublings.
+ */
+function computeReelShot(beat: ReelBeat, view: SceneView, t: number): DirectorShot {
+  const orbit = t * 0.06;
+  switch (beat.kind) {
+    case 'landing':
+    case 'solar-deployed':
+      // Close on the parent as it unfolds.
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(0, 2.5, 0),
+        camera: new THREE.Vector3(Math.cos(orbit) * 14, 7, Math.sin(orbit) * 14),
+      };
+    case 'chassis-started':
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(15, 1.8, -3),
+        camera: new THREE.Vector3(21, 5, 4),
+      };
+    case 'child-wake': {
+      // At this snapshot the woken generation stands as the newest colony seed.
+      const index = Math.max(0, view.colonyCount - 1);
+      const site = colonySeedSite(index);
+      const y = terrainHeight(site.x, site.z);
+      const outward = Math.hypot(site.x, site.z);
+      const ux = outward > 0.001 ? site.x / outward : 1;
+      const uz = outward > 0.001 ? site.z / outward : 0;
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(site.x, y + 2.4, site.z),
+        camera: new THREE.Vector3(site.x + ux * 11 + 3, y + 6, site.z + uz * 11 - 3),
+      };
+    }
+    case 'storm-start':
+    case 'storm-end':
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(0, 4, 0),
+        camera: new THREE.Vector3(Math.cos(orbit * 0.5) * 34, 17, Math.sin(orbit * 0.5) * 34),
+      };
+    case 'resupply': {
+      // Frame the cargo zone with whatever pods had landed by this sol.
+      const slot = podSlot(Math.max(0, view.resupplyCount - 1));
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(slot.x, 1.2, slot.z),
+        camera: new THREE.Vector3(slot.x + 8, 5.5, slot.z + 9),
+      };
+    }
+    default:
+      // Doublings, missed windows, anything else: the high overwatch.
+      return {
+        label: beat.message,
+        target: new THREE.Vector3(0, 2.2, 0),
+        camera: new THREE.Vector3(Math.cos(orbit * 0.6) * 26, 14, Math.sin(orbit * 0.6) * 26),
+      };
+  }
+}
+
+/**
  * Camera rig: eases the orbit target toward the focus selection, or — in
  * Auto — hands the camera to the director, which tracks events and otherwise
- * runs a slow rotation of standing shots. Manual orbiting is disabled while
- * the director has the camera.
+ * runs a slow rotation of standing shots. A running mission reel outranks
+ * both. Manual orbiting is disabled while the machine has the camera.
  */
 function CameraRig({ view }: { readonly view: SceneView }): React.ReactElement {
   const focus = useSimStore((s) => s.focus);
+  const reelBeats = useSimStore((s) => s.reelBeats);
+  const reelIndex = useSimStore((s) => s.reelIndex);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const memoryRef = useRef<DirectorMemory>({ lastColonyCount: -1, colonyPulseUntil: -1, colonyTargetIndex: 0 });
   useFrame(({ camera, clock }) => {
     const controls = controlsRef.current;
     if (controls === null) {
+      return;
+    }
+    if (reelBeats !== null && reelIndex < reelBeats.length) {
+      // Faster easing than the live director: reel cuts should feel like cuts.
+      DIRECTOR_STATUS.label = ''; // the reel overlay carries the caption
+      const shot = computeReelShot(reelBeats[reelIndex], view, clock.getElapsedTime());
+      controls.target.lerp(shot.target, 0.06);
+      camera.position.lerp(shot.camera, 0.045);
+      controls.update();
       return;
     }
     if (focus === 'auto') {
@@ -1483,13 +1558,46 @@ function CameraRig({ view }: { readonly view: SceneView }): React.ReactElement {
   return (
     <OrbitControls
       ref={controlsRef}
-      enabled={focus !== 'auto'}
+      enabled={focus !== 'auto' && reelBeats === null}
       enableDamping
       dampingFactor={0.08}
       maxPolarAngle={Math.PI * 0.49}
       minDistance={6}
       maxDistance={80}
     />
+  );
+}
+
+/**
+ * Letterbox + caption while the mission reel plays: cinematic bars, a beat
+ * counter, and the sim's own event text as the subtitle. Clicking anywhere
+ * on the overlay is not needed — the bottom-bar Reel button stops it.
+ */
+function ReelOverlay(): React.ReactElement | null {
+  const reelBeats = useSimStore((s) => s.reelBeats);
+  const reelIndex = useSimStore((s) => s.reelIndex);
+  const siteId = useSimStore((s) => s.state.siteId);
+  if (reelBeats === null || reelIndex >= reelBeats.length) {
+    return null;
+  }
+  const beat = reelBeats[reelIndex];
+  const unit = siteId === 'mars' ? 'Sol' : 'Day';
+  return (
+    <>
+      {/* Cinematic bars. The scene background is near-black, so solid bars read as letterbox. */}
+      <div className='pointer-events-none absolute inset-x-0 top-0 h-10 bg-background' aria-hidden='true' />
+      <div className='pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-background' aria-hidden='true' />
+      <div className='pointer-events-none absolute left-3 top-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-ice'>
+        <span className='inline-block h-2 w-2 rounded-full bg-ice animate-pulse' aria-hidden='true' />
+        Replay
+      </div>
+      <div className='pointer-events-none absolute inset-x-0 bottom-2 flex flex-col items-center gap-1 px-6 text-center'>
+        <span className='text-[10px] uppercase tracking-[0.3em] text-ice'>
+          Mission reel · {unit} {beat.sol} · {reelIndex + 1}/{reelBeats.length}
+        </span>
+        <span className='text-[12px] leading-tight text-foreground'>{beat.message}</span>
+      </div>
+    </>
   );
 }
 
@@ -1553,6 +1661,7 @@ export function SeedScene(): React.ReactElement {
       {/* Non-interactive viewport dressing: phosphor corner brackets + vignette. */}
       <div className='pointer-events-none absolute inset-0 viewport-frame' aria-hidden='true' />
       <DirectorCaption />
+      <ReelOverlay />
     </div>
   );
 }

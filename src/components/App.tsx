@@ -14,6 +14,7 @@ import { SourcesDrawer } from '@/components/SourcesDrawer';
 import { NewGameModal } from '@/components/NewGameModal';
 import { SimRunner } from '@/components/SimRunner';
 import { SoundController } from '@/components/SoundController';
+import { ReelController } from '@/components/ReelController';
 
 // R3F must never render on the server.
 const SeedScene = dynamic(() => import('@/components/scene/SeedScene').then((m) => m.SeedScene), {
@@ -27,6 +28,7 @@ export function App(): React.ReactElement {
     <div className='flex h-dvh flex-col bg-background text-foreground'>
       <SimRunner />
       <SoundController />
+      <ReelController />
       <TopBar />
       <main className='flex flex-1 min-h-0'>
         <LeftPanel />

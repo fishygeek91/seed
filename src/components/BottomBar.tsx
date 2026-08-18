@@ -18,6 +18,9 @@ export function BottomBar(): React.ReactElement {
   const focus = useSimStore((s) => s.focus);
   const soundOn = useSimStore((s) => s.soundOn);
   const setSoundOn = useSimStore((s) => s.setSoundOn);
+  const reelActive = useSimStore((s) => s.reelBeats !== null);
+  const startReel = useSimStore((s) => s.startReel);
+  const stopReel = useSimStore((s) => s.stopReel);
   const play = useSimStore((s) => s.play);
   const pause = useSimStore((s) => s.pause);
   const setSpeedIndex = useSimStore((s) => s.setSpeedIndex);
@@ -58,6 +61,17 @@ export function BottomBar(): React.ReactElement {
           </button>
         ))}
       </div>
+
+      <button
+        type='button'
+        className={`border px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${reelActive ? 'border-ice text-ice' : 'border-panel-edge text-dim hover:text-foreground'}`}
+        onClick={() => (reelActive ? stopReel() : startReel())}
+        disabled={!reelActive && state.sol < 5}
+        aria-pressed={reelActive}
+        aria-label={reelActive ? 'Stop mission reel' : 'Play mission reel'}
+      >
+        {reelActive ? 'Stop reel' : 'Reel'}
+      </button>
 
       <div className='flex flex-1 items-center gap-2'>
         <span className='text-[10px] uppercase tracking-widest text-dim shrink-0'>{unit} 0</span>

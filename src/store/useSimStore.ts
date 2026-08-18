@@ -11,6 +11,8 @@ import type { SimState, Allocations, NewGameOptions } from '@/sim/state';
 import { createInitialState } from '@/sim/state';
 import { step } from '@/sim/step';
 import type { SiteId, TaskId, TemplateId } from '@/sim/ids';
+import type { ReelBeat } from '@/sim/reel';
+import { buildReelBeats } from '@/sim/reel';
 
 /** Playback speed presets, in simulated hours per real second. */
 export const SPEED_PRESETS: readonly number[] = [2, 8, 24, 96, 240];
@@ -28,6 +30,10 @@ interface SimStore {
   readonly focus: FocusTarget;
   /** Ambient audio feed on/off. Off by default; enabling requires a click (browser autoplay policy). */
   readonly soundOn: boolean;
+  /** Mission-reel beats while a replay is running; null = no reel. */
+  readonly reelBeats: readonly ReelBeat[] | null;
+  /** Index of the beat currently on screen. */
+  readonly reelIndex: number;
   readonly showSources: boolean;
   readonly showNewGame: boolean;
   /** Advance the live sim by a wall-clock frame of dtSeconds. */
@@ -38,6 +44,12 @@ interface SimStore {
   setScrubSol: (sol: number | null) => void;
   setFocus: (focus: FocusTarget) => void;
   setSoundOn: (on: boolean) => void;
+  /** Start the mission reel (no-op when the run is too young for a story). */
+  startReel: () => void;
+  /** Stop the reel and return to live playback. */
+  stopReel: () => void;
+  /** Advance to the next beat, or finish and return to live. */
+  advanceReel: () => void;
   setAllocation: (task: TaskId, weight: number) => void;
   newGame: (options: NewGameOptions) => void;
   setShowSources: (show: boolean) => void;
@@ -66,6 +78,8 @@ export const useSimStore = create<SimStore>((set, get) => ({
   scrubSol: null,
   focus: 'seed',
   soundOn: false,
+  reelBeats: null,
+  reelIndex: 0,
   showSources: false,
   showNewGame: false,
 
@@ -85,15 +99,39 @@ export const useSimStore = create<SimStore>((set, get) => ({
     set({ state: next });
   },
 
-  play: () => set({ playing: true, scrubSol: null }),
+  play: () => set({ playing: true, scrubSol: null, reelBeats: null }),
   pause: () => set({ playing: false }),
   setSpeedIndex: (index: number) => {
     const clamped = Math.max(0, Math.min(SPEED_PRESETS.length - 1, Math.round(index)));
     set({ speedIndex: clamped });
   },
-  setScrubSol: (sol: number | null) => set({ scrubSol: sol, playing: sol === null ? get().playing : false }),
-  setFocus: (focus: FocusTarget) => set({ focus }),
+  // Manual scrubbing takes the timeline away from a running reel.
+  setScrubSol: (sol: number | null) => set({ scrubSol: sol, playing: sol === null ? get().playing : false, reelBeats: null }),
+  // Taking the camera cancels the reel and returns the view to live.
+  setFocus: (focus: FocusTarget) =>
+    get().reelBeats === null ? set({ focus }) : set({ focus, reelBeats: null, scrubSol: null, playing: true }),
   setSoundOn: (on: boolean) => set({ soundOn: on }),
+
+  startReel: () => {
+    const beats = buildReelBeats(get().state);
+    if (beats.length < 2) {
+      return;
+    }
+    set({ reelBeats: beats, reelIndex: 0, playing: false, scrubSol: beats[0].sol });
+  },
+  stopReel: () => set({ reelBeats: null, reelIndex: 0, scrubSol: null, playing: true }),
+  advanceReel: () => {
+    const { reelBeats, reelIndex } = get();
+    if (reelBeats === null) {
+      return;
+    }
+    const next = reelIndex + 1;
+    if (next >= reelBeats.length) {
+      get().stopReel();
+      return;
+    }
+    set({ reelIndex: next, scrubSol: reelBeats[next].sol });
+  },
 
   setAllocation: (task: TaskId, weight: number) => {
     const safe = Number.isFinite(weight) ? Math.max(0, Math.min(100, weight)) : 0;
@@ -110,6 +148,8 @@ export const useSimStore = create<SimStore>((set, get) => ({
       playing: true,
       scrubSol: null,
       focus: 'seed',
+      reelBeats: null,
+      reelIndex: 0,
       showNewGame: false,
     });
   },
