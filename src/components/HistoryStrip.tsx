@@ -31,11 +31,13 @@ const H_DOUBLING = 38;
 const DBL_MIN = 10;
 const DBL_MAX = 5000;
 
-/** Everything derivable from the history array alone (memoized on its reference). */
+/** Everything derivable from the history arrays alone (memoized on their references). */
 interface StripGeometry {
   readonly firstSol: number;
   readonly lastSol: number;
   readonly capacityPoints: string;
+  /** Comparison variant capacity on the same log axis, or null when no comparison. */
+  readonly variantPoints: string | null;
   readonly powerPoints: string;
   readonly powerArea: string;
   readonly batteryPoints: string;
@@ -51,18 +53,24 @@ function makeToX(firstSol: number, lastSol: number): (sol: number) => number {
   return (sol: number) => ((sol - firstSol) / span) * W;
 }
 
-/** Build every polyline and band from the snapshot history. */
-function buildGeometry(history: readonly SolSnapshot[]): StripGeometry {
+/** Build every polyline and band from the snapshot history (plus an optional variant). */
+function buildGeometry(history: readonly SolSnapshot[], variant: readonly SolSnapshot[] | null): StripGeometry {
   const firstSol = history[0].sol;
   const lastSol = history[history.length - 1].sol;
   const toX = makeToX(firstSol, lastSol);
 
-  // Capacity: log scale normalized to the run's own min/max.
+  // Capacity: log scale normalized over both runs so the overlay is honest.
   const logs = history.map((s) => Math.log(Math.max(1, s.capacityKg)));
-  const minLog = Math.min(...logs);
-  const logSpan = Math.max(0.0001, Math.max(...logs) - minLog);
+  const variantLogs = variant !== null ? variant.map((s) => Math.log(Math.max(1, s.capacityKg))) : [];
+  const allLogs = variantLogs.length > 0 ? logs.concat(variantLogs) : logs;
+  const minLog = Math.min(...allLogs);
+  const logSpan = Math.max(0.0001, Math.max(...allLogs) - minLog);
   const capY = (v: number): number => H_CAPACITY - 4 - ((v - minLog) / logSpan) * (H_CAPACITY - 8);
   const capacityPoints = history.map((s, i) => `${toX(s.sol).toFixed(1)},${capY(logs[i]).toFixed(1)}`).join(' ');
+  const variantPoints =
+    variant !== null && variant.length > 1
+      ? variant.map((s, i) => `${toX(s.sol).toFixed(1)},${capY(variantLogs[i]).toFixed(1)}`).join(' ')
+      : null;
 
   // Power: linear kWe area, plus battery fraction on its own 0–1 axis.
   const maxKwe = Math.max(1, ...history.map((s) => s.solarKwe));
@@ -107,7 +115,7 @@ function buildGeometry(history: readonly SolSnapshot[]): StripGeometry {
     }
   }
 
-  return { firstSol, lastSol, capacityPoints, powerPoints, powerArea, batteryPoints, doublingSegments, stormBands, toX };
+  return { firstSol, lastSol, capacityPoints, variantPoints, powerPoints, powerArea, batteryPoints, doublingSegments, stormBands, toX };
 }
 
 /** The crosshair line rendered into each chart at the inspected sol. */
@@ -123,13 +131,20 @@ export function HistoryStrip(): React.ReactElement | null {
   const siteId = useSimStore((s) => s.state.siteId);
   const scrubSol = useSimStore((s) => s.scrubSol);
   const setScrubSol = useSimStore((s) => s.setScrubSol);
+  const compare = useSimStore((s) => s.compare);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
   const [hoverSol, setHoverSol] = useState<number | null>(null);
 
+  const variantHistory = compare.kind === 'done' ? compare.result.history : null;
+  const variantDoublings = compare.kind === 'done' ? compare.result.doublings : null;
+
   // Polylines and bands rebuild only when a new snapshot lands (the history
   // array reference is stable between sols), not on every sim tick.
-  const geometry = useMemo(() => (history.length >= 3 ? buildGeometry(history) : null), [history]);
+  const geometry = useMemo(
+    () => (history.length >= 3 ? buildGeometry(history, variantHistory) : null),
+    [history, variantHistory],
+  );
 
   // Event markers along the capacity baseline: wakes phosphor, resupplies ice.
   const markers = useMemo(() => {
@@ -168,6 +183,13 @@ export function HistoryStrip(): React.ReactElement | null {
     inspectSol !== null
       ? (history.find((s) => s.sol === Math.floor(inspectSol)) ?? history[history.length - 1])
       : history[history.length - 1];
+  // Matching variant snapshot for the readout, when a comparison is loaded.
+  const variantReadout =
+    variantHistory !== null
+      ? inspectSol !== null
+        ? (variantHistory.find((s) => s.sol === Math.floor(inspectSol)) ?? null)
+        : variantHistory[variantHistory.length - 1]
+      : null;
   const unit = siteId === 'mars' ? 'sol' : 'day';
 
   return (
@@ -217,10 +239,27 @@ export function HistoryStrip(): React.ReactElement | null {
             opacity={0.9}
           />
         ))}
+        {variantDoublings !== null
+          ? variantDoublings.map((d) => (
+              <line
+                key={`vdbl-${d.multiple}`}
+                x1={geometry.toX(d.sol)}
+                y1={0}
+                x2={geometry.toX(d.sol)}
+                y2={6}
+                stroke='#ffc857'
+                strokeWidth={1}
+                opacity={0.9}
+              />
+            ))
+          : null}
+        {geometry.variantPoints !== null ? (
+          <polyline points={geometry.variantPoints} fill='none' stroke='#ffc857' strokeWidth={1.1} opacity={0.85} strokeDasharray='3 2' />
+        ) : null}
         <polyline points={geometry.capacityPoints} fill='none' stroke='#b6e9d6' strokeWidth={1.4} />
         {crosshairX !== null ? <Crosshair x={crosshairX} height={H_CAPACITY} live={hoverSol === null} /> : null}
         <text x={3} y={10} fontSize={7} fill='#45705f' fontFamily='inherit'>
-          log capacity · ×2 ticks · wakes + drops on baseline
+          {geometry.variantPoints !== null ? 'log capacity · amber = variant' : 'log capacity · ×2 ticks · wakes + drops on baseline'}
         </text>
       </svg>
 
@@ -251,7 +290,10 @@ export function HistoryStrip(): React.ReactElement | null {
         <span className={inspectSol !== null ? 'text-ice' : ''}>
           {unit} {readoutSnapshot.sol}
         </span>
-        <span>cap {formatKg(readoutSnapshot.capacityKg)}</span>
+        <span>
+          cap {formatKg(readoutSnapshot.capacityKg)}
+          {variantReadout !== null ? <span className='text-amber'> vs {formatKg(variantReadout.capacityKg)}</span> : null}
+        </span>
         <span>dbl {formatDoubling(readoutSnapshot.doublingTimeSols)}</span>
         <span>{readoutSnapshot.solarKwe.toFixed(0)} kWe</span>
         <span>batt {(readoutSnapshot.batteryFraction * 100).toFixed(0)}%</span>

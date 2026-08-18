@@ -28,6 +28,7 @@ import { useSimStore } from '@/store/useSimStore';
 import { selectView } from '@/components/view';
 import type { SceneView } from '@/components/view';
 import type { ReelBeat } from '@/sim/reel';
+import { CANVAS_REGISTRY } from '@/components/scene/canvasRegistry';
 
 /* ------------------------------------------------------------------ */
 /* Shared hologram materials & deterministic noise                     */
@@ -1576,6 +1577,7 @@ function CameraRig({ view }: { readonly view: SceneView }): React.ReactElement {
 function ReelOverlay(): React.ReactElement | null {
   const reelBeats = useSimStore((s) => s.reelBeats);
   const reelIndex = useSimStore((s) => s.reelIndex);
+  const reelRecording = useSimStore((s) => s.reelRecording);
   const siteId = useSimStore((s) => s.state.siteId);
   if (reelBeats === null || reelIndex >= reelBeats.length) {
     return null;
@@ -1587,9 +1589,17 @@ function ReelOverlay(): React.ReactElement | null {
       {/* Cinematic bars. The scene background is near-black, so solid bars read as letterbox. */}
       <div className='pointer-events-none absolute inset-x-0 top-0 h-10 bg-background' aria-hidden='true' />
       <div className='pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-background' aria-hidden='true' />
-      <div className='pointer-events-none absolute left-3 top-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-ice'>
-        <span className='inline-block h-2 w-2 rounded-full bg-ice animate-pulse' aria-hidden='true' />
-        Replay
+      <div className='pointer-events-none absolute left-3 top-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.3em]'>
+        <span className='flex items-center gap-2 text-ice'>
+          <span className='inline-block h-2 w-2 rounded-full bg-ice animate-pulse' aria-hidden='true' />
+          Replay
+        </span>
+        {reelRecording ? (
+          <span className='flex items-center gap-2 text-alarm'>
+            <span className='inline-block h-2 w-2 rounded-full bg-alarm animate-pulse' aria-hidden='true' />
+            Rec
+          </span>
+        ) : null}
       </div>
       <div className='pointer-events-none absolute inset-x-0 bottom-2 flex flex-col items-center gap-1 px-6 text-center'>
         <span className='text-[10px] uppercase tracking-[0.3em] text-ice'>
@@ -1655,7 +1665,16 @@ function SceneContents(): React.ReactElement {
 export function SeedScene(): React.ReactElement {
   return (
     <div className='relative flex-1 min-w-0'>
-      <Canvas camera={{ position: [16, 12, 18], fov: 42 }} dpr={[1, 2]} gl={{ antialias: false }}>
+      <Canvas
+        camera={{ position: [16, 12, 18], fov: 42 }}
+        dpr={[1, 2]}
+        // preserveDrawingBuffer lets the film recorder copy frames reliably.
+        gl={{ antialias: false, preserveDrawingBuffer: true }}
+        onCreated={(rootState) => {
+          // Register the canvas so the film recorder can capture its stream.
+          CANVAS_REGISTRY.el = rootState.gl.domElement;
+        }}
+      >
         <SceneContents />
       </Canvas>
       {/* Non-interactive viewport dressing: phosphor corner brackets + vignette. */}

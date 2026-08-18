@@ -12,9 +12,12 @@ import { RightPanel } from '@/components/RightPanel';
 import { BottomBar } from '@/components/BottomBar';
 import { SourcesDrawer } from '@/components/SourcesDrawer';
 import { NewGameModal } from '@/components/NewGameModal';
+import { CompareModal } from '@/components/CompareModal';
 import { SimRunner } from '@/components/SimRunner';
 import { SoundController } from '@/components/SoundController';
 import { ReelController } from '@/components/ReelController';
+import { CompareRunner } from '@/components/CompareRunner';
+import { FilmRecorder } from '@/components/FilmRecorder';
 
 // R3F must never render on the server.
 const SeedScene = dynamic(() => import('@/components/scene/SeedScene').then((m) => m.SeedScene), {
@@ -29,6 +32,8 @@ export function App(): React.ReactElement {
       <SimRunner />
       <SoundController />
       <ReelController />
+      <CompareRunner />
+      <FilmRecorder />
       <TopBar />
       <main className='flex flex-1 min-h-0'>
         <LeftPanel />
@@ -38,6 +43,7 @@ export function App(): React.ReactElement {
       <BottomBar />
       <SourcesDrawer />
       <NewGameModal />
+      <CompareModal />
     </div>
   );
 }

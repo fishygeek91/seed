@@ -29,6 +29,7 @@ export function TopBar(): React.ReactElement {
   const scrubSol = useSimStore((s) => s.scrubSol);
   const setShowSources = useSimStore((s) => s.setShowSources);
   const setShowNewGame = useSimStore((s) => s.setShowNewGame);
+  const setShowCompare = useSimStore((s) => s.setShowCompare);
   const view = selectView(state, scrubSol);
 
   const site = SITES[state.siteId];
@@ -112,6 +113,13 @@ export function TopBar(): React.ReactElement {
           onClick={() => setShowSources(true)}
         >
           Sources
+        </button>
+        <button
+          type='button'
+          className='border border-panel-edge px-3 py-1.5 text-[11px] uppercase tracking-widest text-dim hover:text-amber hover:border-amber/60 transition-colors'
+          onClick={() => setShowCompare(true)}
+        >
+          Compare
         </button>
         <button
           type='button'

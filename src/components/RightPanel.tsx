@@ -9,6 +9,7 @@ import { useSimStore } from '@/store/useSimStore';
 import { selectView, formatDoubling, formatKg } from '@/components/view';
 import { HudValue } from '@/components/HudValue';
 import { HistoryStrip } from '@/components/HistoryStrip';
+import { CompareVerdict } from '@/components/CompareVerdict';
 import { ELEMENT_IDS, ELEMENT_LABELS, VITAMIN_IDS, VITAMIN_LABELS, PART_IDS } from '@/sim/ids';
 import { PART_RECIPES } from '@/data/parts';
 
@@ -121,6 +122,7 @@ export function RightPanel(): React.ReactElement {
     <aside className='panel-surface flex w-80 shrink-0 flex-col gap-2 border-l border-panel-edge p-3 overflow-y-auto'>
       <DoublingHero />
       <HistoryStrip />
+      <CompareVerdict />
       <div className='flex gap-2'>
         <HudValue
           label='Capacity'

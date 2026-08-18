@@ -72,6 +72,7 @@ class SoundEngine {
   private jetFilter: BiquadFilterNode | null = null;
   private enabled = false;
   private suspendTimer: number | null = null;
+  private recordDest: MediaStreamAudioDestinationNode | null = null;
   private readonly lastStingerAt = new Map<SimEvent['kind'], number>();
 
   /** Build the context and graph if needed, and resume it. Call from a click handler. */
@@ -145,6 +146,23 @@ class SoundEngine {
         this.jetGain.gain.setTargetAtTime(0, t, 0.15);
       }
     }
+  }
+
+  /**
+   * A MediaStream carrying the master bus, for muxing into film recordings.
+   * Null until the engine has been unlocked (no context = nothing to tap).
+   */
+  recordingStream(): MediaStream | null {
+    const ctx = this.ctx;
+    const master = this.master;
+    if (ctx === null || master === null) {
+      return null;
+    }
+    if (this.recordDest === null) {
+      this.recordDest = ctx.createMediaStreamDestination();
+      master.connect(this.recordDest);
+    }
+    return this.recordDest.stream;
   }
 
   /** Play the stinger for a sim event, rate-limited per kind. */

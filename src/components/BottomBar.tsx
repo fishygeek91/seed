@@ -19,6 +19,7 @@ export function BottomBar(): React.ReactElement {
   const soundOn = useSimStore((s) => s.soundOn);
   const setSoundOn = useSimStore((s) => s.setSoundOn);
   const reelActive = useSimStore((s) => s.reelBeats !== null);
+  const reelRecording = useSimStore((s) => s.reelRecording);
   const startReel = useSimStore((s) => s.startReel);
   const stopReel = useSimStore((s) => s.stopReel);
   const play = useSimStore((s) => s.play);
@@ -71,6 +72,16 @@ export function BottomBar(): React.ReactElement {
         aria-label={reelActive ? 'Stop mission reel' : 'Play mission reel'}
       >
         {reelActive ? 'Stop reel' : 'Reel'}
+      </button>
+      <button
+        type='button'
+        className={`border px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${reelRecording ? 'border-alarm text-alarm' : 'border-panel-edge text-dim hover:text-foreground'}`}
+        onClick={() => (reelRecording ? stopReel() : startReel(true))}
+        disabled={(reelActive && !reelRecording) || (!reelActive && state.sol < 5)}
+        aria-pressed={reelRecording}
+        aria-label={reelRecording ? 'Stop filming the reel' : 'Play the mission reel and record it to a WebM film'}
+      >
+        {reelRecording ? '⏺ Rec' : 'Film'}
       </button>
 
       <div className='flex flex-1 items-center gap-2'>
