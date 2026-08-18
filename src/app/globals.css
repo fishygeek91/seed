@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+/* SEED — dark, industrial, cinematic. Kiln orange, arc-weld white, ice, rust, stainless. */
+:root {
+  --background: #08090b;
+  --panel: #0e1114;
+  --panel-edge: #1c2126;
+  --foreground: #c9ced4; /* stainless */
+  --dim: #6b7480;
+  --kiln: #ff7a1a;
+  --arc: #f4f7ff;
+  --ice: #9fd4f5;
+  --rust: #a04f2c;
+  --alarm: #ff3b30;
+  --ok: #7fd15f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-panel-edge: var(--panel-edge);
+  --color-foreground: var(--foreground);
+  --color-dim: var(--dim);
+  --color-kiln: var(--kiln);
+  --color-arc: var(--arc);
+  --color-ice: var(--ice);
+  --color-rust: var(--rust);
+  --color-alarm: var(--alarm);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+
+/* Thin industrial scrollbars */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--panel-edge);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Hero doubling-time number */
+.hero-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  text-shadow: 0 0 24px rgba(255, 122, 26, 0.25);
+}
+
+.hero-number.dropping {
+  color: var(--kiln);
+  text-shadow: 0 0 40px rgba(255, 122, 26, 0.6);
+}
+
+.hero-number.spiking {
+  color: var(--alarm);
+  text-shadow: 0 0 32px rgba(255, 59, 48, 0.5);
+}
+
+/* Range inputs: industrial sliders */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: var(--panel-edge);
+  border-radius: 2px;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--kiln);
+  cursor: ew-resize;
+  box-shadow: 0 0 8px rgba(255, 122, 26, 0.55);
+  transition: box-shadow 120ms ease;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 14px rgba(255, 122, 26, 0.85);
+}
+
+/* Viewport dressing: corner brackets + inner vignette over the 3D canvas */
+.viewport-frame {
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55);
+}
+.viewport-frame::before,
+.viewport-frame::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  opacity: 0.55;
+}
+.viewport-frame::before {
+  top: 10px;
+  left: 10px;
+  border-top: 1px solid var(--dim);
+  border-left: 1px solid var(--dim);
+}
+.viewport-frame::after {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 1px solid var(--dim);
+  border-right: 1px solid var(--dim);
+}
+
+/* Panels get a faint vertical sheen so they read as machined surfaces */
+.panel-surface {
+  background: linear-gradient(180deg, #10141a 0%, var(--panel) 30%, #0b0d10 100%);
+}
+
+/* Hover formula tooltips */
+.hud-tip {
+  position: absolute;
+  z-index: 60;
+  max-width: 340px;
+  background: #0b0d10;
+  border: 1px solid var(--panel-edge);
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--foreground);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  white-space: pre-line;
+}
