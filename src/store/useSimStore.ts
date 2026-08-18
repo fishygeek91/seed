@@ -15,8 +15,8 @@ import type { SiteId, TaskId, TemplateId } from '@/sim/ids';
 /** Playback speed presets, in simulated hours per real second. */
 export const SPEED_PRESETS: readonly number[] = [2, 8, 24, 96, 240];
 
-/** Camera focus targets for the 3D scene. */
-export type FocusTarget = 'seed' | 'child' | 'field';
+/** Camera focus targets for the 3D scene. 'auto' hands the camera to the director. */
+export type FocusTarget = 'seed' | 'child' | 'field' | 'auto';
 
 /** The full UI-facing store shape. */
 interface SimStore {
@@ -26,6 +26,8 @@ interface SimStore {
   /** Scrubber position: null = live; a sol number = viewing history. */
   readonly scrubSol: number | null;
   readonly focus: FocusTarget;
+  /** Ambient audio feed on/off. Off by default; enabling requires a click (browser autoplay policy). */
+  readonly soundOn: boolean;
   readonly showSources: boolean;
   readonly showNewGame: boolean;
   /** Advance the live sim by a wall-clock frame of dtSeconds. */
@@ -35,6 +37,7 @@ interface SimStore {
   setSpeedIndex: (index: number) => void;
   setScrubSol: (sol: number | null) => void;
   setFocus: (focus: FocusTarget) => void;
+  setSoundOn: (on: boolean) => void;
   setAllocation: (task: TaskId, weight: number) => void;
   newGame: (options: NewGameOptions) => void;
   setShowSources: (show: boolean) => void;
@@ -62,6 +65,7 @@ export const useSimStore = create<SimStore>((set, get) => ({
   speedIndex: 2,
   scrubSol: null,
   focus: 'seed',
+  soundOn: false,
   showSources: false,
   showNewGame: false,
 
@@ -89,6 +93,7 @@ export const useSimStore = create<SimStore>((set, get) => ({
   },
   setScrubSol: (sol: number | null) => set({ scrubSol: sol, playing: sol === null ? get().playing : false }),
   setFocus: (focus: FocusTarget) => set({ focus }),
+  setSoundOn: (on: boolean) => set({ soundOn: on }),
 
   setAllocation: (task: TaskId, weight: number) => {
     const safe = Number.isFinite(weight) ? Math.max(0, Math.min(100, weight)) : 0;

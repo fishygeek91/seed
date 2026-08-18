@@ -26,6 +26,12 @@ export interface SceneView {
   readonly kilnActive: boolean;
   readonly childCompletion: number;
   readonly childWalking: boolean;
+  /** Woken descendant seeds shown out on the plain (excludes gen 0 + walker). */
+  readonly colonyCount: number;
+  /** Resupply landers that have already touched down (persist as cargo pods). */
+  readonly resupplyCount: number;
+  /** Descent animation progress 0–1 while a shipment is on final approach, else null. */
+  readonly resupplyDescent: number | null;
   readonly generation: number;
   readonly activeSeedCount: number;
   readonly workingRobots: number;
@@ -63,6 +69,17 @@ export function liveView(state: SimState): SceneView {
   }
   const latest = state.history.length > 0 ? state.history[state.history.length - 1] : null;
   const recentWake = state.events.some((e) => e.kind === 'child-wake' && state.sol - e.sol < 3);
+  // Resupply: count landed shipments, and drive a descent animation while one
+  // is on final approach (the last stretch of sols before arrival).
+  const resupplyCount = state.events.filter((e) => e.kind === 'resupply').length;
+  const descentSols = 1.5;
+  let resupplyDescent: number | null = null;
+  for (const shipment of state.shipments) {
+    const remaining = shipment.arrivalSol - state.sol;
+    if (remaining >= 0 && remaining < descentSols) {
+      resupplyDescent = 1 - remaining / descentSols;
+    }
+  }
   return {
     siteId: state.siteId,
     sol: state.sol,
@@ -74,6 +91,9 @@ export function liveView(state: SimState): SceneView {
     kilnActive: state.energy.currentLoadKwe > state.energy.currentSolarKwe * 0.05 && state.energy.batteryKwh > 1,
     childCompletion: state.child.completionFraction,
     childWalking: recentWake,
+    colonyCount: Math.max(0, state.activeSeedCount - 1 - (recentWake ? 1 : 0)),
+    resupplyCount,
+    resupplyDescent,
     generation: state.generation,
     activeSeedCount: state.activeSeedCount,
     workingRobots: state.robots.filter((r) => r.status === 'working').length,
@@ -104,6 +124,9 @@ export function snapshotView(state: SimState, snapshot: SolSnapshot): SceneView 
     kilnActive: snapshot.solarKwe > 1,
     childCompletion: snapshot.childCompletion,
     childWalking: false,
+    colonyCount: Math.max(0, snapshot.generation),
+    resupplyCount: state.events.filter((e) => e.kind === 'resupply' && e.sol <= snapshot.sol).length,
+    resupplyDescent: null,
     generation: snapshot.generation,
     activeSeedCount: snapshot.generation + 1,
     workingRobots: snapshot.workingRobots,

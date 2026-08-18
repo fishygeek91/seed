@@ -32,7 +32,7 @@ export function NewGameModal(): React.ReactElement | null {
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/70' role='dialog' aria-label='New seed'>
       <div className='w-[520px] max-w-full border border-panel-edge bg-panel p-5'>
-        <h2 className='text-sm uppercase tracking-[0.25em] text-kiln mb-4'>New seed</h2>
+        <h2 className='text-sm uppercase tracking-[0.25em] text-phos mb-4'>New seed</h2>
 
         <div className='mb-4'>
           <div className='text-[10px] uppercase tracking-widest text-dim mb-1.5'>Site</div>
@@ -41,7 +41,7 @@ export function NewGameModal(): React.ReactElement | null {
               <button
                 key={s}
                 type='button'
-                className={`flex-1 border p-2.5 text-left transition-colors ${siteId === s ? 'border-kiln' : 'border-panel-edge hover:border-dim'}`}
+                className={`flex-1 border p-2.5 text-left transition-colors ${siteId === s ? 'border-phos' : 'border-panel-edge hover:border-dim'}`}
                 onClick={() => setSiteId(s)}
               >
                 <div className='text-[12px] text-foreground'>{SITES[s].name}</div>
@@ -58,7 +58,7 @@ export function NewGameModal(): React.ReactElement | null {
               <button
                 key={t}
                 type='button'
-                className={`border p-2.5 text-left transition-colors ${templateId === t ? 'border-kiln' : 'border-panel-edge hover:border-dim'}`}
+                className={`border p-2.5 text-left transition-colors ${templateId === t ? 'border-phos' : 'border-panel-edge hover:border-dim'}`}
                 onClick={() => setTemplateId(t)}
               >
                 <div className='text-[12px] text-foreground'>{TEMPLATES[t].name}</div>
@@ -109,7 +109,7 @@ export function NewGameModal(): React.ReactElement | null {
           </button>
           <button
             type='button'
-            className='border border-kiln px-4 py-2 text-[11px] uppercase tracking-widest text-kiln hover:bg-kiln/10'
+            className='border border-phos px-4 py-2 text-[11px] uppercase tracking-widest text-phos hover:bg-phos/10'
             onClick={() =>
               newGame({
                 siteId,

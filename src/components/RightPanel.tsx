@@ -33,7 +33,7 @@ function Row({ label, value, alarm = false }: { readonly label: string; readonly
 
 /**
  * Capacity growth sparkline: log-scale capacity over every recorded sol,
- * with storm sols shaded rust and doubling moments marked as kiln ticks.
+ * with storm sols shaded magenta and doubling moments marked as phosphor ticks.
  * Exponential growth renders as a straight climbing line — takeoff at a glance.
  */
 function CapacitySparkline(): React.ReactElement | null {
@@ -73,14 +73,14 @@ function CapacitySparkline(): React.ReactElement | null {
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className='w-full border border-panel-edge bg-black/30' role='img' aria-label='Capacity growth, log scale'>
       {bands.map((band, i) => (
-        <rect key={`storm-${i}`} x={band.x} y={0} width={band.width} height={h} fill='#a04f2c' opacity={0.22} />
+        <rect key={`storm-${i}`} x={band.x} y={0} width={band.width} height={h} fill='#ff3d8a' opacity={0.14} />
       ))}
       {doublings.map((d) => (
-        <line key={`dbl-${d.multiple}`} x1={toX(d.sol)} y1={0} x2={toX(d.sol)} y2={h} stroke='#ff7a1a' strokeWidth={1} opacity={0.8} />
+        <line key={`dbl-${d.multiple}`} x1={toX(d.sol)} y1={0} x2={toX(d.sol)} y2={h} stroke='#2bff9e' strokeWidth={1} opacity={0.8} />
       ))}
-      {scrubSol !== null ? <line x1={toX(scrubSol)} y1={0} x2={toX(scrubSol)} y2={h} stroke='#9fd4f5' strokeWidth={1} /> : null}
-      <polyline points={points} fill='none' stroke='#c9ced4' strokeWidth={1.4} />
-      <text x={3} y={10} fontSize={7} fill='#6b7480' fontFamily='inherit'>
+      {scrubSol !== null ? <line x1={toX(scrubSol)} y1={0} x2={toX(scrubSol)} y2={h} stroke='#3fd2ff' strokeWidth={1} /> : null}
+      <polyline points={points} fill='none' stroke='#b6e9d6' strokeWidth={1.4} />
+      <text x={3} y={10} fontSize={7} fill='#45705f' fontFamily='inherit'>
         log capacity · storms shaded · ×2 ticks
       </text>
     </svg>
@@ -180,7 +180,7 @@ export function RightPanel(): React.ReactElement {
         <HudValue
           label='Capacity'
           value={formatKg(view.capacityKg)}
-          accent='kiln'
+          accent='phos'
           formula={'Factory mass + working capacity: solar + batteries + machines + able robots + staged child + shipped children.\nDoublings measured against the sol-0 baseline.'}
         />
         <HudValue
@@ -249,7 +249,7 @@ export function RightPanel(): React.ReactElement {
 
       <Ledger title={`Child seed — generation ${state.generation + 1}`}>
         <Row label='Completion' value={`${(state.child.completionFraction * 100).toFixed(1)}%`} />
-        <MeterBar fraction={state.child.completionFraction} color='var(--kiln)' />
+        <MeterBar fraction={state.child.completionFraction} color='var(--phos)' />
         <Row label='Chassis' value={state.child.chassisStarted ? 'on the pad' : 'not started'} />
         <Row label='Ration staged' value={formatKg(VITAMIN_IDS.reduce((s, v) => s + state.child.rationKg[v], 0))} />
         <Row label='Feedstock staged' value={formatKg(state.child.feedstockKg)} />

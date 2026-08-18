@@ -13,7 +13,7 @@ interface HudValueProps {
   readonly value: string;
   /** Multi-line explanation: formula on one line, source/assumption after. */
   readonly formula: string;
-  readonly accent?: 'kiln' | 'ice' | 'alarm' | 'ok' | 'none';
+  readonly accent?: 'phos' | 'ice' | 'alarm' | 'ok' | 'none';
   readonly big?: boolean;
 }
 
@@ -23,8 +23,8 @@ export function HudValue({ label, value, formula, accent = 'none', big = false }
   const ref = useRef<HTMLDivElement>(null);
 
   const accentClass =
-    accent === 'kiln'
-      ? 'text-kiln'
+    accent === 'phos'
+      ? 'text-phos'
       : accent === 'ice'
         ? 'text-ice'
         : accent === 'alarm'

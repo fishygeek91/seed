@@ -22,7 +22,7 @@ export function SourcesDrawer(): React.ReactElement | null {
       <button type='button' className='flex-1 bg-black/60' onClick={() => setShow(false)} aria-label='Close sources drawer' />
       <div className='w-[560px] max-w-full overflow-y-auto border-l border-panel-edge bg-panel p-5'>
         <div className='flex items-center justify-between mb-4'>
-          <h2 className='text-sm uppercase tracking-[0.25em] text-kiln'>Sources &amp; assumptions</h2>
+          <h2 className='text-sm uppercase tracking-[0.25em] text-phos'>Sources &amp; assumptions</h2>
           <button type='button' className='text-dim hover:text-foreground text-lg leading-none' onClick={() => setShow(false)}>
             ×
           </button>
@@ -40,11 +40,11 @@ export function SourcesDrawer(): React.ReactElement | null {
               <div key={key} className='border border-panel-edge p-2.5'>
                 <div className='flex justify-between items-baseline gap-2'>
                   <span className='text-[12px] text-foreground'>{c.label}</span>
-                  <span className='text-[12px] tabular-nums text-kiln shrink-0'>
+                  <span className='text-[12px] tabular-nums text-phos shrink-0'>
                     {c.value} {c.unit}
                   </span>
                 </div>
-                <p className={`text-[10px] leading-relaxed mt-1 ${assumed ? 'text-rust' : 'text-dim'}`}>{c.source}</p>
+                <p className={`text-[10px] leading-relaxed mt-1 ${assumed ? 'text-amber' : 'text-dim'}`}>{c.source}</p>
               </div>
             );
           })}

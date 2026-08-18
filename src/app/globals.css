@@ -1,18 +1,20 @@
 @import 'tailwindcss';
 
-/* SEED — dark, industrial, cinematic. Kiln orange, arc-weld white, ice, rust, stainless. */
+/* SEED — machine telemetry. The factory's own self-model: phosphor green
+   on void black, cyan schematics, magenta alarms, CRT scanlines.
+   Deliberately the opposite pole from RED TONNES' warm rust-and-stainless. */
 :root {
-  --background: #08090b;
-  --panel: #0e1114;
-  --panel-edge: #1c2126;
-  --foreground: #c9ced4; /* stainless */
-  --dim: #6b7480;
-  --kiln: #ff7a1a;
-  --arc: #f4f7ff;
-  --ice: #9fd4f5;
-  --rust: #a04f2c;
-  --alarm: #ff3b30;
-  --ok: #7fd15f;
+  --background: #010409;
+  --panel: #030b10;
+  --panel-edge: #0d2b2e;
+  --foreground: #b6e9d6; /* phosphor-tinted readout text */
+  --dim: #45705f;
+  --phos: #2bff9e; /* primary phosphor green: growth, takeoff, the living machine */
+  --arc: #eafff6; /* arc-weld white */
+  --ice: #3fd2ff; /* schematic cyan: logistics, history, water ice */
+  --amber: #ffc857; /* assumptions and cautions */
+  --alarm: #ff3d8a; /* magenta alarm: failure states */
+  --ok: #2bff9e;
 }
 
 @theme inline {
@@ -21,10 +23,10 @@
   --color-panel-edge: var(--panel-edge);
   --color-foreground: var(--foreground);
   --color-dim: var(--dim);
-  --color-kiln: var(--kiln);
+  --color-phos: var(--phos);
   --color-arc: var(--arc);
   --color-ice: var(--ice);
-  --color-rust: var(--rust);
+  --color-amber: var(--amber);
   --color-alarm: var(--alarm);
   --color-ok: var(--ok);
   --font-sans: var(--font-geist-sans);
@@ -44,7 +46,25 @@ body {
   font-size: 13px;
 }
 
-/* Thin industrial scrollbars */
+/* CRT scanlines + a faint phosphor bloom over the whole console. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.16) 0px,
+      rgba(0, 0, 0, 0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 10, 8, 0.35) 100%);
+}
+
+/* Thin phosphor scrollbars */
 *::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -62,20 +82,31 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 0.95;
-  text-shadow: 0 0 24px rgba(255, 122, 26, 0.25);
+  text-shadow: 0 0 24px rgba(43, 255, 158, 0.22);
 }
 
 .hero-number.dropping {
-  color: var(--kiln);
-  text-shadow: 0 0 40px rgba(255, 122, 26, 0.6);
+  color: var(--phos);
+  animation: hero-pulse 2.6s ease-in-out infinite;
+}
+
+/* Takeoff breathes: the phosphor glow swells and relaxes while doubling time falls. */
+@keyframes hero-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 28px rgba(43, 255, 158, 0.45);
+  }
+  50% {
+    text-shadow: 0 0 52px rgba(43, 255, 158, 0.8);
+  }
 }
 
 .hero-number.spiking {
   color: var(--alarm);
-  text-shadow: 0 0 32px rgba(255, 59, 48, 0.5);
+  text-shadow: 0 0 32px rgba(255, 61, 138, 0.5);
 }
 
-/* Range inputs: industrial sliders */
+/* Range inputs: phosphor sliders */
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -90,18 +121,18 @@ input[type='range']::-webkit-slider-thumb {
   width: 10px;
   height: 14px;
   border-radius: 2px;
-  background: var(--kiln);
+  background: var(--phos);
   cursor: ew-resize;
-  box-shadow: 0 0 8px rgba(255, 122, 26, 0.55);
+  box-shadow: 0 0 8px rgba(43, 255, 158, 0.55);
   transition: box-shadow 120ms ease;
 }
 input[type='range']::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 14px rgba(255, 122, 26, 0.85);
+  box-shadow: 0 0 14px rgba(43, 255, 158, 0.85);
 }
 
-/* Viewport dressing: corner brackets + inner vignette over the 3D canvas */
+/* Viewport dressing: phosphor corner brackets + inner vignette over the hologram. */
 .viewport-frame {
-  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 90px rgba(0, 4, 3, 0.6);
 }
 .viewport-frame::before,
 .viewport-frame::after {
@@ -109,24 +140,27 @@ input[type='range']::-webkit-slider-thumb:hover {
   position: absolute;
   width: 26px;
   height: 26px;
-  opacity: 0.55;
+  opacity: 0.7;
 }
 .viewport-frame::before {
   top: 10px;
   left: 10px;
-  border-top: 1px solid var(--dim);
-  border-left: 1px solid var(--dim);
+  border-top: 1px solid var(--phos);
+  border-left: 1px solid var(--phos);
 }
 .viewport-frame::after {
   bottom: 10px;
   right: 10px;
-  border-bottom: 1px solid var(--dim);
-  border-right: 1px solid var(--dim);
+  border-bottom: 1px solid var(--phos);
+  border-right: 1px solid var(--phos);
 }
 
-/* Panels get a faint vertical sheen so they read as machined surfaces */
+/* Panels are drafting sheets: near-black with a faint blueprint grid. */
 .panel-surface {
-  background: linear-gradient(180deg, #10141a 0%, var(--panel) 30%, #0b0d10 100%);
+  background:
+    linear-gradient(0deg, rgba(43, 255, 158, 0.025) 1px, transparent 1px) 0 0 / 100% 24px,
+    linear-gradient(90deg, rgba(43, 255, 158, 0.025) 1px, transparent 1px) 0 0 / 24px 100%,
+    linear-gradient(180deg, #04100f 0%, var(--panel) 30%, #020a09 100%);
 }
 
 /* Hover formula tooltips */
@@ -134,13 +168,15 @@ input[type='range']::-webkit-slider-thumb:hover {
   position: absolute;
   z-index: 60;
   max-width: 340px;
-  background: #0b0d10;
+  background: #020a09;
   border: 1px solid var(--panel-edge);
   padding: 8px 10px;
   font-size: 11px;
   line-height: 1.5;
   color: var(--foreground);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(43, 255, 158, 0.08);
   pointer-events: none;
   white-space: pre-line;
 }

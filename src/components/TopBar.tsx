@@ -52,14 +52,14 @@ export function TopBar(): React.ReactElement {
   return (
     <header className='panel-surface flex items-center gap-1 border-b border-panel-edge px-3 py-2 shrink-0'>
       <div className='flex items-baseline gap-2 pr-4 border-r border-panel-edge'>
-        <span className='text-kiln font-bold tracking-[0.3em] text-base'>SEED</span>
+        <span className='text-phos font-bold tracking-[0.3em] text-base'>SEED</span>
         <span className='text-[10px] text-dim uppercase tracking-widest'>{site.name}</span>
       </div>
 
       <HudValue
         label={`Doubling (${unit})`}
         value={formatDoubling(view.doublingTimeSols)}
-        accent={view.doublingTimeSols !== null && view.doublingTimeSols < 300 ? 'kiln' : 'none'}
+        accent={view.doublingTimeSols !== null && view.doublingTimeSols < 300 ? 'phos' : 'none'}
         formula={'t₂ = ln(2) / r, where r = Δln(capacity mass) per sol over a trailing 20-sol window.\nCapacity = deployed solar + batteries + machines + able robots + staged child mass.\n∞ means growth ≤ 0: the seed is dying.'}
       />
       <HudValue
@@ -122,7 +122,7 @@ export function TopBar(): React.ReactElement {
         </button>
         <button
           type='button'
-          className='border border-kiln/50 px-3 py-1.5 text-[11px] uppercase tracking-widest text-kiln hover:bg-kiln/10 transition-colors'
+          className='border border-phos/50 px-3 py-1.5 text-[11px] uppercase tracking-widest text-phos hover:bg-phos/10 transition-colors'
           onClick={() => setShowNewGame(true)}
         >
           New seed

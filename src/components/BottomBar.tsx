@@ -1,12 +1,13 @@
 /**
- * Bottom bar: time scrubber (sols/days), play/pause, speed presets, and
- * camera focus (seed / child / field).
+ * Bottom bar: time scrubber (sols/days), play/pause, speed presets, camera
+ * focus (seed / child / field / auto director), and the ambient sound toggle.
  */
 
 'use client';
 
 import { useSimStore, SPEED_PRESETS } from '@/store/useSimStore';
 import type { FocusTarget } from '@/store/useSimStore';
+import { soundEngine } from '@/sound/engine';
 
 /** Playback + scrubbing controls. */
 export function BottomBar(): React.ReactElement {
@@ -15,6 +16,8 @@ export function BottomBar(): React.ReactElement {
   const speedIndex = useSimStore((s) => s.speedIndex);
   const scrubSol = useSimStore((s) => s.scrubSol);
   const focus = useSimStore((s) => s.focus);
+  const soundOn = useSimStore((s) => s.soundOn);
+  const setSoundOn = useSimStore((s) => s.setSoundOn);
   const play = useSimStore((s) => s.play);
   const pause = useSimStore((s) => s.pause);
   const setSpeedIndex = useSimStore((s) => s.setSpeedIndex);
@@ -29,13 +32,14 @@ export function BottomBar(): React.ReactElement {
     { id: 'seed', label: 'Seed' },
     { id: 'child', label: 'Child' },
     { id: 'field', label: 'Field' },
+    { id: 'auto', label: 'Auto' },
   ];
 
   return (
     <footer className='panel-surface flex items-center gap-3 border-t border-panel-edge px-3 py-2 shrink-0'>
       <button
         type='button'
-        className='w-20 border border-panel-edge px-2 py-1.5 text-[11px] uppercase tracking-widest text-foreground hover:border-kiln hover:text-kiln transition-colors'
+        className='w-20 border border-panel-edge px-2 py-1.5 text-[11px] uppercase tracking-widest text-foreground hover:border-phos hover:text-phos transition-colors'
         onClick={() => (playing && scrubSol === null ? pause() : play())}
       >
         {playing && scrubSol === null ? 'Pause' : 'Play'}
@@ -46,7 +50,7 @@ export function BottomBar(): React.ReactElement {
           <button
             key={preset}
             type='button'
-            className={`border px-2 py-1.5 text-[10px] tabular-nums transition-colors ${i === speedIndex ? 'border-kiln text-kiln' : 'border-panel-edge text-dim hover:text-foreground'}`}
+            className={`border px-2 py-1.5 text-[10px] tabular-nums transition-colors ${i === speedIndex ? 'border-phos text-phos' : 'border-panel-edge text-dim hover:text-foreground'}`}
             onClick={() => setSpeedIndex(i)}
             aria-label={`Speed: ${preset} sim-hours per second`}
           >
@@ -81,13 +85,31 @@ export function BottomBar(): React.ReactElement {
           <button
             key={opt.id}
             type='button'
-            className={`border px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${focus === opt.id ? 'border-ice text-ice' : 'border-panel-edge text-dim hover:text-foreground'}`}
+            className={`border px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${focus === opt.id ? (opt.id === 'auto' ? 'border-phos text-phos' : 'border-ice text-ice') : 'border-panel-edge text-dim hover:text-foreground'}`}
             onClick={() => setFocus(opt.id)}
           >
             {opt.label}
           </button>
         ))}
       </div>
+
+      <button
+        type='button'
+        className={`border px-2 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${soundOn ? 'border-phos text-phos' : 'border-panel-edge text-dim hover:text-foreground'}`}
+        onClick={() => {
+          const next = !soundOn;
+          // The AudioContext must be created/resumed inside the click itself
+          // (browser autoplay policy); the store flag then keeps it running.
+          if (next) {
+            soundEngine.unlock();
+          }
+          setSoundOn(next);
+        }}
+        aria-pressed={soundOn}
+        aria-label={soundOn ? 'Mute ambient sound' : 'Enable ambient sound'}
+      >
+        {soundOn ? '♪ On' : '♪ Off'}
+      </button>
     </footer>
   );
 }
